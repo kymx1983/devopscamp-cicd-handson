@@ -1,0 +1,59 @@
+name: Build and Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main  # mainブランチへのpushをトリガーに実行
+
+permissions:
+  id-token: write  # OIDCトークン発行に必要
+  contents: read   # リポジトリ内容を取得するために必要
+
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REPOSITORY: test-repository   # ECRリポジトリ名
+  ECS_CLUSTER: test-cluster         # ECSクラスター名
+  ECS_SERVICE: test-service         # ECSサービス名
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ソースコードをチェックアウト
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      # AWS認証情報を設定 (OIDCを利用)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ECRへログイン
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Dockerイメージをビルド＆プッシュ
+      - name: Build and Push Docker image
+        run: |
+          IMAGE_REPO=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          docker build -t $IMAGE_REPO:latest .
+          docker push $IMAGE_REPO:latest
+
+      # タスク定義のプレースホルダをシークレットの値で置換
+      - name: Render task definition
+        run: |
+          sed -i "s|<AWS_ACCOUNT_ID>|${{ secrets.AWS_ACCOUNT_ID }}|g" ecs-taskdef.json
+
+      # ECSへデプロイ
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ecs-taskdef.json
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
