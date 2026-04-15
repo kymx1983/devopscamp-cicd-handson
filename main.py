@@ -10,4 +10,4 @@ def health():
 
 @app.get("/")
 def root():
-    return {"message": "API呼び出しテストに成功しました"}
+    return {"message": "API呼び出しテストに成功しました（ver2）"}
