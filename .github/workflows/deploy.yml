@@ -44,6 +44,11 @@ jobs:
           docker build -t $IMAGE_REPO:latest .
           docker push $IMAGE_REPO:latest
 
+      # タスク定義のプレースホルダをシークレットの値で置換
+      - name: Render task definition
+        run: |
+          sed -i "s|<AWS_ACCOUNT_ID>|${{ secrets.AWS_ACCOUNT_ID }}|g" ecs-taskdef.json
+
       # ECSへデプロイ
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2

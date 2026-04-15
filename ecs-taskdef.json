@@ -4,11 +4,11 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::125605020607:role/ecsTaskExecutionRole-cicd-handson",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole-cicd-handson",
   "containerDefinitions": [
     {
       "name": "app",
-      "image": "125605020607.dkr.ecr.ap-northeast-1.amazonaws.com/test-repository:latest",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-1.amazonaws.com/test-repository:latest",
       "portMappings": [
         {
           "containerPort": 8000,
